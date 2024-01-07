@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "github.com/majesticbeast/gochat";
+
+service ChatService {
+  rpc SendMessage(Message) returns (MessageAck) {}
+  rpc JoinChat(JoinRequest) returns (stream Message) {}
+}
+
+message Message {
+  string username = 1;
+  string content = 2;
+  int64 timestamp = 3;
+  string clientId = 4;
+}
+
+message MessageAck {
+  bool success = 1;
+  string message = 2;
+}
+
+message JoinRequest {
+  string clientId = 1;
+}
