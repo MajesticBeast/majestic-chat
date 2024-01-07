@@ -117,7 +117,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case username:
 		switch msg := msg.(type) {
 		case tea.WindowSizeMsg:
-			m.viewport.Width = msg.Width - 10
+			m.viewport.Width = msg.Width
 			m.viewport.Height = msg.Height - 10
 		case tea.KeyMsg:
 			switch msg.Type {
@@ -192,21 +192,21 @@ func (m model) View() string {
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		)+"\n\n", m.viewport.Width-50)
+		)+"\n\n", m.viewport.Width-5)
 
 	case chat:
 		return wordwrap.String(fmt.Sprintf(
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		)+"\n\n", m.viewport.Width-50)
+		)+"\n\n", m.viewport.Width-5)
 	default:
 		return "something went wrong"
 	}
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
