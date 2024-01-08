@@ -84,7 +84,7 @@ func initialModel() model {
 	ta.KeyMap.InsertNewline.SetEnabled(false)
 
 	// Chat display area
-	vp := viewport.New(50, 5)
+	vp := viewport.New(200, 10)
 	vp.SetContent("Welcome to the lobby!")
 
 	return model{
@@ -113,12 +113,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.textarea, tiCmd = m.textarea.Update(msg)
 	m.viewport, vpCmd = m.viewport.Update(msg)
 
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.SetHeightWidth(msg)
+	}
+
 	switch m.appState {
 	case username:
 		switch msg := msg.(type) {
 		case tea.WindowSizeMsg:
-			m.viewport.Width = msg.Width
-			m.viewport.Height = msg.Height - 10
+			m.SetHeightWidth(msg)
 		case tea.KeyMsg:
 			switch msg.Type {
 			case tea.KeyCtrlC, tea.KeyEsc:
@@ -139,8 +143,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case chat:
 		switch msg := msg.(type) {
 		case tea.WindowSizeMsg:
-			m.viewport.Width = msg.Width
-			m.viewport.Height = msg.Height - 10
+			m.SetHeightWidth(msg)
 		case tea.KeyMsg:
 			switch msg.Type {
 			case tea.KeyCtrlC, tea.KeyEsc:
@@ -171,10 +174,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case chatMsg:
 			chatMessage := (*gochat.Message)(msg)
 			unixTime := chatMessage.GetTimestamp()
+			msgUsername := chatMessage.GetUsername()
+			msgContent := chatMessage.GetContent()
+
+			if msgUsername == m.username {
+				msgUsername = m.senderStyle.Render(msgUsername)
+			}
+
 			t := time.Unix(unixTime, 0)
-			newMessage := fmt.Sprintf("[%v] %s: %s\n", t.UTC().Format("2006-01-02 15:04:05"), chatMessage.GetUsername(), chatMessage.GetContent())
+			newMessage := fmt.Sprintf("[%v] %s: %s\n", t.UTC().Format("2006-01-02 15:04:05"), msgUsername, msgContent)
 			m.messages = append(m.messages, newMessage)
-			m.viewport.SetContent(strings.Join(m.messages, ""))
+			m.viewport.SetContent(wordwrap.String(strings.Join(m.messages, ""), m.viewport.Width-1))
 			m.viewport.GotoBottom()
 			return m, getMessages(m)
 		}
@@ -187,19 +197,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	switch m.appState {
 	case username:
-		m.textarea.Placeholder = "Enter a username and hit enter to join..."
-		return wordwrap.String(fmt.Sprintf(
+		return mainStyle().Render(fmt.Sprintf(
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		)+"\n\n", m.viewport.Width-5)
+		) + "\n\n")
 
 	case chat:
-		return wordwrap.String(fmt.Sprintf(
+		return mainStyle().Render(fmt.Sprintf(
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		)+"\n\n", m.viewport.Width-5)
+		) + "\n\n")
+
 	default:
 		return "something went wrong"
 	}
@@ -210,4 +220,22 @@ func main() {
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+var (
+	mainStyle = func() lipgloss.Style {
+		return lipgloss.NewStyle().
+			//Foreground(lipgloss.Color("241")).
+			//Background(lipgloss.Color("236")).
+			PaddingTop(0).
+			PaddingBottom(0)
+		//Width(w)
+	}
+)
+
+func (m *model) SetHeightWidth(msg tea.WindowSizeMsg) {
+	m.viewport.Width = msg.Width
+	m.viewport.Height = msg.Height - m.textarea.Height() - 6
+	m.viewport.SetContent(wordwrap.String(strings.Join(m.messages, ""), m.viewport.Width-1))
+	m.textarea.SetWidth(m.viewport.Width - 4)
 }
