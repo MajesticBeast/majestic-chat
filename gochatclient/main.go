@@ -201,14 +201,14 @@ func (m model) View() string {
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		) + "\n\n")
+		))
 
 	case chat:
 		return mainStyle().Render(fmt.Sprintf(
 			"%s\n\n%s\n",
 			m.viewport.View(),
 			m.textarea.View(),
-		) + "\n\n")
+		))
 
 	default:
 		return "something went wrong"
@@ -228,7 +228,9 @@ var (
 			//Foreground(lipgloss.Color("241")).
 			//Background(lipgloss.Color("236")).
 			PaddingTop(0).
-			PaddingBottom(0)
+			PaddingBottom(0).
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("30"))
 		//Width(w)
 	}
 )

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/majesticbeast/gochat/gochatserver/proto"
 	"google.golang.org/grpc"
 	"log"
@@ -24,7 +23,6 @@ func (s *chatServer) SendMessage(ctx context.Context, req *gochat.Message) (*goc
 	timestamp := req.GetTimestamp()
 	username := req.GetUsername()
 
-	log.Println("Length of clients: ", len(s.clients))
 	for _, client := range s.clients {
 		if err := client.Send(&gochat.Message{
 			Username:  username,
@@ -32,11 +30,12 @@ func (s *chatServer) SendMessage(ctx context.Context, req *gochat.Message) (*goc
 			Content:   content,
 			Timestamp: timestamp,
 		}); err != nil {
+			log.Println(err)
 			return nil, err
 		}
 	}
 
-	fmt.Println("Received message to send: ", senderId, content, timestamp, username)
+	log.Println("Received message to send: ", senderId, content, timestamp, username)
 
 	return &gochat.MessageAck{Success: true}, nil
 }
